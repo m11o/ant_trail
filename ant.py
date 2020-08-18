@@ -21,9 +21,11 @@ class Ant:
     def generate_ants(cls, amount, field):
         ants = []
 
+        x = field.nest_field.nest_position[0]
+        y = field.nest_field.nest_position[1]
         for i in range(amount):
-            x = random.randrange(0, field.X)
-            y = random.randrange(0, field.Y)
+            # x = random.randrange(0, field.X)
+            # y = random.randrange(0, field.Y)
 
             ant = cls(x, y, field.X, field.Y)
             ants.append(ant)
@@ -207,6 +209,9 @@ class Ant:
             self.mode = AntModeEnum.Returnee
             self.change_direction(self.change_home_direction(field))
             return
+        elif self.is_searcher():
+            if random.randint(0, 20) == 0:
+                self.change_direction(random.choice(list(AntDirectionEnum)))
         elif self.is_servant() and not is_on_pheromone:
             self.change_direction(self.change_pheromones_direction(field, 'max'))
             self.mode = AntModeEnum.Searcher
@@ -269,4 +274,4 @@ class Ant:
         for food_position in food_positions:
             on_food_positions.append(food_position[0] == self.x and food_position[1] == self.y)
 
-        return all(on_food_positions)
+        return any(on_food_positions)

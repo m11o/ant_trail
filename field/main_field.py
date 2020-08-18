@@ -2,10 +2,10 @@ from field.field import Field
 import numpy as np
 
 class MainField(Field):
-    def __init__(self, X, Y):
+    def __init__(self, X, Y, food_positions = None, nest_position = None):
         super().__init__(X, Y)
-        self.food_field = MainField.FoodField(X, Y)
-        self.nest_field = MainField.NestField(X, Y)
+        self.food_field = MainField.FoodField(X, Y, food_positions)
+        self.nest_field = MainField.NestField(X, Y, nest_position)
         self.pheromones_field = MainField.PheromonesField(X, Y)
 
         self.__init_field()
@@ -30,11 +30,14 @@ class MainField(Field):
 
 
     class FoodField(Field):
-        def __init__(self, X, Y):
+        def __init__(self, X, Y, food_positions):
             super().__init__(X, Y)
 
-            self.food_position_size = 1
-            self.food_positions = self.__assign_food_positions()
+            if not bool(food_positions):
+                food_positions = [super().shuffle_position()]
+
+            self.food_position_size = len(food_positions)
+            self.food_positions = food_positions
 
         def __assign_food_positions(self):
             food_positions = []
@@ -45,10 +48,13 @@ class MainField(Field):
 
 
     class NestField(Field):
-        def __init__(self, X, Y):
+        def __init__(self, X, Y, nest_position):
             super().__init__(X, Y)
 
-            self.nest_position = super().shuffle_position()
+            if not bool(nest_position):
+                nest_position = super().shuffle_position()
+
+            self.nest_position = nest_position
             self.__assign_nest()
 
         def __assign_nest(self):
