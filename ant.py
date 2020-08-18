@@ -8,6 +8,7 @@ from probs.searcher_probs_service import SearcherProbsService
 from probs.servant_probs_service import ServantProbsService
 from pheromone import Pheromone
 
+
 class Ant:
     def __init__(self, x, y, field_X, field_Y):
         self.x = x
@@ -16,6 +17,7 @@ class Ant:
         self.field_Y = field_Y
         self.mode = AntModeEnum.Searcher
         self.direction = random.choice(list(AntDirectionEnum))
+        self.older_mode = None
 
     @classmethod
     def generate_ants(cls, amount, field):
@@ -32,6 +34,13 @@ class Ant:
             field.update_field_value(None, ant)
 
         return ants
+
+    def change_mode(self, mode):
+        self.older_mode = self.mode
+        self.mode = mode
+
+    def was_searcher(self):
+        return self.older_mode is AntModeEnum.Searcher
 
     def is_searcher(self):
         return self.mode is AntModeEnum.Searcher
@@ -85,7 +94,7 @@ class Ant:
         self.x = next_position[0]
         self.y = next_position[1]
 
-        self.change_mode(field)
+        self.change_condition(field)
 
         field.update_field_value(before_ant, self)
 
@@ -189,24 +198,24 @@ class Ant:
                            self.is_bottom_end_line() and (self.is_downleft() or self.is_downright())) or (
                            self.is_right_end_line() and (self.is_upright() or self.is_downright()))
 
-    def change_mode(self, field):
+    def change_condition(self, field):
         is_on_food = self.is_on_food(field)
         is_on_nest = self.is_on_nest(field)
         is_on_pheromone = self.is_on_pheromone(field)
 
         if self.is_returnee() and is_on_nest:
             self.change_direction(self.change_pheromones_direction(field, 'max'))
-            self.mode = AntModeEnum.Servant
+            self.change_mode(AntModeEnum.Servant)
             return
         elif self.is_returnee() and not is_on_nest:
             self.change_direction(self.change_home_direction(field))
             return
         elif self.is_searcher() and is_on_pheromone:
             self.change_direction(self.change_pheromones_direction(field, 'min'))
-            self.mode = AntModeEnum.Servant
+            self.change_mode(AntModeEnum.Servant)
             return
         elif self.is_searcher() and is_on_food:
-            self.mode = AntModeEnum.Returnee
+            self.change_mode(AntModeEnum.Returnee)
             self.change_direction(self.change_home_direction(field))
             return
         elif self.is_searcher():
@@ -214,10 +223,10 @@ class Ant:
                 self.change_direction(random.choice(list(AntDirectionEnum)))
         elif self.is_servant() and not is_on_pheromone:
             self.change_direction(self.change_pheromones_direction(field, 'max'))
-            self.mode = AntModeEnum.Searcher
+            self.change_mode(AntModeEnum.Searcher)
             return
         elif self.is_servant() and is_on_food:
-            self.mode = AntModeEnum.Returnee
+            self.change_mode(AntModeEnum.Returnee)
             self.change_direction(self.change_home_direction(field))
             return
 
