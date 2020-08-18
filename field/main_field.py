@@ -71,3 +71,27 @@ class MainField(Field):
                 return 0
 
             return self.field[x][y].quantity
+
+        def upleft_average_quantity(self, x, y):
+            if self.is_top_end_line(x) or self.is_left_end_line(y):
+                return 0
+
+            return (self.quantity(x, y - 1) + self.quantity(x - 1, y - 1) + self.quantity(x - 1, y)) / 3.0
+
+        def upright_average_quantity(self, x, y):
+            if self.is_top_end_line(x) or self.is_right_end_line(y):
+                return 0
+
+            return (self.quantity(x, y + 1) + self.quantity(x - 1, y + 1) + self.quantity(x - 1, y)) / 3.0
+
+        def downright_average_quantity(self, x, y):
+            if self.is_bottom_end_line(x) or self.is_right_end_line(y):
+                return 0
+
+            return (self.quantity(x, y + 1) + self.quantity(x + 1, y + 1) + self.quantity(x + 1, y)) / 3.0
+
+        def downleft_average_quantity(self, x, y):
+            if self.is_bottom_end_line(x) or self.is_left_end_line(y):
+                return 0
+
+            return (self.quantity(x, y - 1) + self.quantity(x + 1, y - 1) + self.quantity(x + 1, y)) / 3.0

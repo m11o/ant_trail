@@ -15,7 +15,7 @@ class ServantProbsService(BaseProbsService):
         return self.__calc_prob(pheromones)
 
     def __calc_prob(self, pheromones):
-        left_prob = (self.MODEL_PARAMS + pheromones['left'])**2 / (self.MODEL_PARAMS + pheromones['left'])**2 + (self.MODEL_PARAMS + pheromones['right'])**2
+        left_prob = (self.MODEL_PARAMS + pheromones['left'])**2 / ((self.MODEL_PARAMS + pheromones['left'])**2 + (self.MODEL_PARAMS + pheromones['right'])**2)
         right_prob = 1 - left_prob
 
         return [left_prob, right_prob]

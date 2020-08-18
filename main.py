@@ -9,14 +9,11 @@ def draw_animation(X, Y, ant_amount):
     field = MainField(X, Y)
     ants = Ant.generate_ants(ant_amount, field)
 
-    fig, ax = plt.subplots(dpi = 150);
+    fig, ax = plt.subplots(dpi = 150)
 
     artists = []
 
     for i in range(1000):
-        if i % 100 == 0:
-            print(i)
-
         for ant in ants:
             ant.move(field)
 
@@ -33,5 +30,5 @@ def draw_animation(X, Y, ant_amount):
     rc('animation', html='jshtml')
     return ani
 
-ani = draw_animation(10, 10, 2)
+ani = draw_animation(100, 100, 200)
 ani.save('anim.mp4', writer="ffmpeg")

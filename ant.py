@@ -20,6 +20,7 @@ class Ant:
     @classmethod
     def generate_ants(cls, amount, field):
         ants = []
+
         for i in range(amount):
             x = random.randrange(0, field.X)
             y = random.randrange(0, field.Y)
@@ -52,10 +53,9 @@ class Ant:
         return self.direction is AntDirectionEnum.DownRight
 
     def drop_pheromone(self, field):
-        if not self.is_returnee():
+        if not self.is_returnee() and not self.is_on_food(field):
             return
 
-        pheromone = None
         if field.pheromones_field.has_pheromone(self.x, self.y):
             pheromone = field.pheromones_field.field[self.x][self.y]
         else:
@@ -67,13 +67,14 @@ class Ant:
     def move(self, field):
         before_ant = copy.copy(self)
 
+        self.drop_pheromone(field)
+
         if self.is_line_end():
             self.change_direction()
             return
 
         prob = self.__calc_prob(field)
         next_direction = self.next_move_direction(prob)
-        next_position = []
         if next_direction == 0:
             next_position = self.next_left_position()
         else:
@@ -82,7 +83,6 @@ class Ant:
         self.x = next_position[0]
         self.y = next_position[1]
 
-        self.drop_pheromone(field)
         self.change_mode(field)
 
         field.update_field_value(before_ant, self)
@@ -104,7 +104,7 @@ class Ant:
 
     def next_positions(self):
         if self.is_line_end():
-            return []
+            return [None, None]
 
         next_x = self.x - 1 if self.is_upleft() or self.is_upright() else self.x + 1
         next_y = self.y + 1 if self.is_upright() or self.is_downright() else self.y - 1
@@ -115,17 +115,17 @@ class Ant:
         next_positions = self.next_positions()
 
         if self.is_upleft() or self.is_downright():
-            return next_positions[0]
-        else:
             return next_positions[1]
+        else:
+            return next_positions[0]
 
     def next_right_position(self):
         next_positions = self.next_positions()
 
         if self.is_upleft() or self.is_downright():
-            return next_positions[1]
-        else:
             return next_positions[0]
+        else:
+            return next_positions[1]
 
     def change_direction(self, direction = None):
         if bool(direction):
@@ -193,14 +193,14 @@ class Ant:
         is_on_pheromone = self.is_on_pheromone(field)
 
         if self.is_returnee() and is_on_nest:
+            self.change_direction(self.change_pheromones_direction(field, 'max'))
             self.mode = AntModeEnum.Servant
-            self.change_direction()
             return
         elif self.is_returnee() and not is_on_nest:
             self.change_direction(self.change_home_direction(field))
             return
         elif self.is_searcher() and is_on_pheromone:
-            self.change_thin_pheromene_direction(field)
+            self.change_direction(self.change_pheromones_direction(field, 'min'))
             self.mode = AntModeEnum.Servant
             return
         elif self.is_searcher() and is_on_food:
@@ -208,45 +208,33 @@ class Ant:
             self.change_direction(self.change_home_direction(field))
             return
         elif self.is_servant() and not is_on_pheromone:
+            self.change_direction(self.change_pheromones_direction(field, 'max'))
             self.mode = AntModeEnum.Searcher
             return
         elif self.is_servant() and is_on_food:
             self.mode = AntModeEnum.Returnee
-            self.change_direction()
+            self.change_direction(self.change_home_direction(field))
             return
 
-    def change_thin_pheromene_direction(self, field):
-        upleft_phero = 0 if self.is_top_end_line() or self.is_left_end_line() else (field.pheromone_quantity(self.x,
-                                                                                                             self.y - 1) + field.pheromone_quantity(
-            self.x - 1, self.y - 1) + field.pheromone_quantity(self.x - 1, self.y)) / 3
-        upright_phero = 0 if self.is_top_end_line() or self.is_right_end_line() else (field.pheromone_quantity(self.x,
-                                                                                                               self.y + 1) + field.pheromone_quantity(
-            self.x - 1, self.y + 1) + field.pheromone_quantity(self.x - 1, self.y)) / 3
-        downright_phero = 0 if self.is_bottom_end_line() or self.is_right_end_line() else (field.pheromone_quantity(
-            self.x, self.y + 1) + field.pheromone_quantity(self.x + 1, self.y + 1) + field.pheromone_quantity(
-            self.x + 1, self.y)) / 3
-        downleft_phero = 0 if self.is_bottom_end_line() or self.is_left_end_line() else (field.pheromone_quantity(
-            self.x, self.y - 1) + field.pheromone_quantity(self.x + 1, self.y - 1) + field.pheromone_quantity(
-            self.x + 1, self.y)) / 3
-
+    def change_pheromones_direction(self, field, sort='min'):
         hash = {
-            'upleft': upleft_phero,
-            'upright': upright_phero,
-            'downright': downright_phero,
-            'downleft': downleft_phero
+            'upleft': field.pheromones_field.upleft_average_quantity(self.x, self.y),
+            'upright': field.pheromones_field.upright_average_quantity(self.x, self.y),
+            'downright': field.pheromones_field.downright_average_quantity(self.x, self.y),
+            'downleft': field.pheromones_field.downleft_average_quantity(self.x, self.y)
         }
 
-        sorted_hash = sorted(hash.items(), key=lambda x: x[1])
+        sorted_hash = sorted(hash.items(), key = lambda x: x[1], reverse = (sort == 'max'))
         for i in sorted_hash:
             if bool(i[1]):
                 if i[0] == 'upleft':
-                    self.direction = AntDirectionEnum.UpLeft
+                    return AntDirectionEnum.UpLeft
                 elif i[0] == 'upright':
-                    self.direction = AntDirectionEnum.UpRight
+                    return AntDirectionEnum.UpRight
                 elif i[0] == 'downright':
-                    self.direction = AntDirectionEnum.DownRight
+                    return AntDirectionEnum.DownRight
                 elif i[0] == 'downleft':
-                    self.direction = AntDirectionEnum.DownLeft
+                    return AntDirectionEnum.DownLeft
 
                 break
 
