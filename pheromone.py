@@ -1,7 +1,7 @@
 class Pheromone:
     INCREASING_QUANTITY_BY_STEP = 1.0
     DECREASING_QUANTITY_BY_STEP = 0.01
-    MAX_QUANTITY = 100.0
+    MAX_QUANTITY = 10000.0
 
     def __init__(self):
         self.quantity = self.INCREASING_QUANTITY_BY_STEP
